@@ -26,7 +26,12 @@ def evaluateTokens(requestContext, tokens):
   elif tokens.call:
     func = SeriesFunctions[tokens.call.func]
     args = [evaluateTokens(requestContext, arg) for arg in tokens.call.args]
-    return func(requestContext, *args)
+    kwargs = dict([(kwarg.argname, evaluateTokens(requestContext, kwarg.args[0]))
+                   for kwarg in tokens.call.kwargs])
+    try:
+      return func(requestContext, *args, **kwargs)
+    except NormalizeEmptyResultError:
+      return []
 
   elif tokens.number:
     if tokens.number.integer:
@@ -44,4 +49,4 @@ def evaluateTokens(requestContext, tokens):
 
 
 #Avoid import circularities
-from graphite.render.functions import SeriesFunctions
+from graphite.render.functions import SeriesFunctions,NormalizeEmptyResultError
